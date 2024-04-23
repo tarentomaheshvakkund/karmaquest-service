@@ -23,7 +23,7 @@ public class Constants {
     public static final String QUE_MARK = "?";
     public static final String COMMA = ",";
     public static final String CLOSING_BRACE = ");";
-
+    public static final String USER_ID_LOWER = "userid";
     private Constants() {
     }
 }
