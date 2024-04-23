@@ -25,9 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class CassandraConnectionManagerImpl implements CassandraConnectionManager {
     private static Cluster cluster;
-    private static final Map<String, Session> cassandraSessionMap = new ConcurrentHashMap<>(2);
-    public static final Logger logger = LogManager.getLogger(CassandraConnectionManagerImpl.class);
-    ;
+    private static Map<String, Session> cassandraSessionMap = new ConcurrentHashMap<>(2);
+    public static Logger logger = LogManager.getLogger(CassandraConnectionManagerImpl.class);
     List<String> keyspacesList = Arrays.asList(Constants.KEYSPACE_SUNBIRD, Constants.KEYSPACE_SUNBIRD_COURSES);
 
     @PostConstruct
@@ -47,7 +46,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
         if (null != session) {
             return session;
         } else {
-            logger.info("CassandraConnectionManagerImpl:: Creating connection for :: " + keyspace);
+            logger.info("CassandraConnectionManagerImpl:: Creating connection for :: {}", keyspace);
             Session session2 = cluster.connect(keyspace);
             cassandraSessionMap.put(keyspace, session2);
             return session2;
@@ -87,11 +86,16 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
     }
 
     private static Cluster createCluster(String[] hosts, PoolingOptions poolingOptions) {
-        Cluster.Builder builder = Cluster.builder().addContactPoints(hosts).withProtocolVersion(ProtocolVersion.V3).withRetryPolicy(DefaultRetryPolicy.INSTANCE).withTimestampGenerator(new AtomicMonotonicTimestampGenerator()).withPoolingOptions(poolingOptions);
-
+        Cluster.Builder builder =
+                Cluster
+                        .builder()
+                        .addContactPoints(hosts)
+                        .withProtocolVersion(ProtocolVersion.V3)
+                        .withRetryPolicy(DefaultRetryPolicy.INSTANCE)
+                        .withTimestampGenerator(new AtomicMonotonicTimestampGenerator())
+                        .withPoolingOptions(poolingOptions);
         ConsistencyLevel consistencyLevel = getConsistencyLevel();
-        logger.info("CassandraConnectionManagerImpl:createCluster: Consistency level = " + consistencyLevel);
-
+        logger.info("CassandraConnectionManagerImpl:createCluster: Consistency level = {}", consistencyLevel);
         if (consistencyLevel != null) {
             builder.withQueryOptions(new QueryOptions().setConsistencyLevel(consistencyLevel));
         }
@@ -102,18 +106,18 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
     private static ConsistencyLevel getConsistencyLevel() {
         String consistency = PropertiesCache.getInstance().readProperty(Constants.SUNBIRD_CASSANDRA_CONSISTENCY_LEVEL);
 
-        logger.info("CassandraConnectionManagerImpl:getConsistencyLevel: level = " + consistency);
+        logger.info("CassandraConnectionManagerImpl:getConsistencyLevel: level = {}", consistency);
 
         if (StringUtils.isBlank(consistency)) return null;
 
         try {
             return ConsistencyLevel.valueOf(consistency.toUpperCase());
         } catch (IllegalArgumentException exception) {
-            logger.info("CassandraConnectionManagerImpl:getConsistencyLevel: Exception occurred with error message = " + exception.getMessage());
+            logger.info("CassandraConnectionManagerImpl:getConsistencyLevel: Exception occurred with error message = {} "
+                    , exception.getMessage());
         }
         return null;
     }
-
 
     public static void registerShutDownHook() {
         Runtime runtime = Runtime.getRuntime();
@@ -135,7 +139,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
                 }
                 logger.info("completed resource cleanup Cassandra.");
             } catch (Exception ex) {
-                logger.error(String.valueOf(ex));
+                logger.error(ex);
             }
         }
     }
