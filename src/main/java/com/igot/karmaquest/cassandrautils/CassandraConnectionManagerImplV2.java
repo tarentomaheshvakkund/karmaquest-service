@@ -1,0 +1,118 @@
+package com.igot.karmaquest.cassandrautils;
+
+import com.datastax.driver.core.*;
+import com.datastax.driver.core.policies.DefaultRetryPolicy;
+import com.igot.karmaquest.exceptions.ProjectCommonException;
+import com.igot.karmaquest.util.Constants;
+import com.igot.karmaquest.util.PropertiesCache;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.annotation.PostConstruct;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * @author mahesh.vakkund
+ */
+@Component
+public class CassandraConnectionManagerImplV2 implements  CassandraConnectionManager {
+    private final Logger logger = LogManager.getLogger(getClass());
+    private final Map<String, Session> cassandraSessionMap = new ConcurrentHashMap<>(2);
+    private Cluster cluster;
+
+    @PostConstruct
+    private void initialize() {
+        logger.info("Initializing CassandraConnectionManager...");
+        registerShutdownHook();
+        createCassandraConnection();
+        initializeSessions();
+        logger.info("CassandraConnectionManager initialized.");
+    }
+
+    @Override
+    public Session getSession(String keyspace) {
+        return cassandraSessionMap.computeIfAbsent(keyspace, k -> cluster.connect(keyspace));
+    }
+
+    private void createCassandraConnection() {
+        try {
+            PropertiesCache cache = PropertiesCache.getInstance();
+            PoolingOptions poolingOptions = new PoolingOptions();
+            poolingOptions.setCoreConnectionsPerHost(HostDistance.LOCAL, Integer.parseInt(cache.getProperty(Constants.CORE_CONNECTIONS_PER_HOST_FOR_LOCAL)));
+            poolingOptions.setMaxConnectionsPerHost(HostDistance.LOCAL, Integer.parseInt(cache.getProperty(Constants.MAX_CONNECTIONS_PER_HOST_FOR_LOCAL)));
+            poolingOptions.setCoreConnectionsPerHost(HostDistance.REMOTE, Integer.parseInt(cache.getProperty(Constants.CORE_CONNECTIONS_PER_HOST_FOR_REMOTE)));
+            poolingOptions.setMaxConnectionsPerHost(HostDistance.REMOTE, Integer.parseInt(cache.getProperty(Constants.MAX_CONNECTIONS_PER_HOST_FOR_REMOTE)));
+            poolingOptions.setMaxRequestsPerConnection(HostDistance.LOCAL, Integer.parseInt(cache.getProperty(Constants.MAX_REQUEST_PER_CONNECTION)));
+            poolingOptions.setHeartbeatIntervalSeconds(Integer.parseInt(cache.getProperty(Constants.HEARTBEAT_INTERVAL)));
+            poolingOptions.setPoolTimeoutMillis(Integer.parseInt(cache.getProperty(Constants.POOL_TIMEOUT)));
+            String[] hosts = StringUtils.split(cache.getProperty(Constants.CASSANDRA_CONFIG_HOST), ",");
+            cluster = createCluster(hosts, poolingOptions);
+            logClusterDetails(cluster);
+        } catch (Exception e) {
+            logger.error("Error creating Cassandra connection", e);
+            throw new ProjectCommonException("Internal Server Error", e.getMessage(), 500);
+        }
+    }
+
+    private static Cluster createCluster(String[] hosts, PoolingOptions poolingOptions) {
+        Cluster.Builder builder = Cluster.builder()
+                .addContactPoints(hosts)
+                .withProtocolVersion(ProtocolVersion.V3)
+                .withRetryPolicy(DefaultRetryPolicy.INSTANCE)
+                .withTimestampGenerator(new AtomicMonotonicTimestampGenerator())
+                .withPoolingOptions(poolingOptions);
+
+        ConsistencyLevel consistencyLevel = getConsistencyLevel();
+        if (consistencyLevel != null) {
+            builder.withQueryOptions(new QueryOptions().setConsistencyLevel(consistencyLevel));
+        }
+
+        return builder.build();
+    }
+
+    private static ConsistencyLevel getConsistencyLevel() {
+        String consistency = PropertiesCache.getInstance().readProperty(Constants.SUNBIRD_CASSANDRA_CONSISTENCY_LEVEL);
+        if (StringUtils.isBlank(consistency)) return null;
+
+        try {
+            return ConsistencyLevel.valueOf(consistency.toUpperCase());
+        } catch (IllegalArgumentException exception) {
+            LogManager.getLogger(CassandraConnectionManagerImpl.class)
+                    .info("Exception occurred with error message = {}", exception.getMessage());
+        }
+        return null;
+    }
+
+    private void initializeSessions() {
+        List<String> keyspacesList = Arrays.asList(Constants.KEYSPACE_SUNBIRD, Constants.KEYSPACE_SUNBIRD_COURSES);
+        for (String keyspace : keyspacesList) {
+            getSession(keyspace);
+        }
+    }
+
+    private void registerShutdownHook() {
+        Runtime.getRuntime().addShutdownHook(new Thread(this::cleanupResources));
+        logger.info("Cassandra shutdown hook registered.");
+    }
+
+    private void cleanupResources() {
+        logger.info("Starting resource cleanup for Cassandra...");
+        cassandraSessionMap.values().forEach(Session::close);
+        if (cluster != null) {
+            cluster.close();
+        }
+        logger.info("Resource cleanup for Cassandra completed.");
+    }
+
+    private void logClusterDetails(Cluster cluster) {
+        final Metadata metadata = cluster.getMetadata();
+        logger.info("Connected to cluster: {}", metadata.getClusterName());
+        metadata.getAllHosts().forEach(host ->
+                logger.info("Datacenter: {}; Host: {}; Rack: {}", host.getDatacenter(), host.getAddress(), host.getRack()));
+    }
+}
