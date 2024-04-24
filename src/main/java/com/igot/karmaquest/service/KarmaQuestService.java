@@ -8,7 +8,7 @@ import java.util.Map;
 public interface KarmaQuestService {
     void processInterests();
 
-    void getUserDetails(String userId);
+    Object getInterest(String interestId);
 
     Object insertInterest(Map<String, Object> createInterest);
 

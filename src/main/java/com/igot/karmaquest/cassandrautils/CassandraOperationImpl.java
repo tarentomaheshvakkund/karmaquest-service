@@ -9,15 +9,14 @@ import com.datastax.driver.core.querybuilder.Select;
 import com.datastax.driver.core.querybuilder.Select.Builder;
 import com.datastax.driver.core.querybuilder.Select.Where;
 import com.igot.karmaquest.util.Constants;
+import com.igot.karmaquest.util.karmaQuestApiResponse;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
-import org.codehaus.jackson.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -84,8 +83,8 @@ public class CassandraOperationImpl implements CassandraOperation{
   }
 
   @Override
-  public String insertRecord(String keyspaceName, String tableName, Map<String, Object> request) {
-
+  public Object insertRecord(String keyspaceName, String tableName, Map<String, Object> request) {
+    karmaQuestApiResponse response = new karmaQuestApiResponse();
     String query = CassandraUtil.getPreparedStatement(keyspaceName, tableName, request);
     try {
       PreparedStatement statement = connectionManager.getSession(keyspaceName).prepare(query);
@@ -97,11 +96,13 @@ public class CassandraOperationImpl implements CassandraOperation{
         array[i++] = iterator.next();
       }
       connectionManager.getSession(keyspaceName).execute(boundStatement.bind(array));
+      response.put(Constants.RESPONSE, Constants.SUCCESS);
     } catch (Exception e) {
       String errMsg = String.format("Exception occurred while inserting record to %s %s", tableName, e.getMessage());
       logger.error(errMsg);
-      return e.getMessage();
+      response.put(Constants.RESPONSE, Constants.FAILED);
+      response.put(Constants.ERROR_MESSAGE, errMsg);
     }
-    return "created the record";
+    return response;
   }
 }

@@ -8,5 +8,5 @@ public interface CassandraOperation {
   List<Map<String, Object>> getRecordsByPropertiesByKey(String keyspaceName, String tableName,
       Map<String, Object> propertyMap, List<String> fields, String key);
 
-  public String insertRecord(String keyspaceName, String tableName, Map<String, Object> request);
+  public Object insertRecord(String keyspaceName, String tableName, Map<String, Object> request);
 }

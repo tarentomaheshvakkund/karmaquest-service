@@ -1,13 +1,8 @@
 package com.igot.karmaquest.service;
-
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.Statement;
-import com.datastax.driver.core.querybuilder.QueryBuilder;
-import com.datastax.driver.core.querybuilder.Update;
-import com.datastax.driver.core.querybuilder.Update.Assignments;
 import com.igot.karmaquest.cassandrautils.CassandraConnectionManager;
 import com.igot.karmaquest.cassandrautils.CassandraOperation;
 import com.igot.karmaquest.util.Constants;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,19 +32,20 @@ public class KarmaQuestServiceImpl implements KarmaQuestService {
     }
 
     @Override
-    public void getUserDetails(String userId) {
+    public Object getInterest(String interestId) {
         logger.info("KarmaQuestServiceImpl::getUserDetails");
         Map<String, Object> propertyMap = new HashMap<>();
-        propertyMap.put(Constants.USER_ID_LOWER, userId);
-        List<String> fields = null;
-        cassandraOperation.getRecordsByPropertiesByKey("sunbird", "user", propertyMap, fields, userId);
+        propertyMap.put(Constants.INTEREST_ID, interestId);
+        List<String> fields = new ArrayList<>();
+        return cassandraOperation.getRecordsByPropertiesByKey("sunbird", "interest_capture", propertyMap, fields,
+            interestId);
 
     }
 
     @Override
-    public String insertInterest(Map<String, Object> createInterest) {
+    public Object insertInterest(Map<String, Object> createInterest) {
         logger.info("KarmaQuestServiceImpl::insertInterest");
-        return cassandraOperation.insertRecord("sunbird", "intesrest_capture", createInterest);
+        return cassandraOperation.insertRecord("sunbird", "interest_capture", createInterest);
     }
 
 }
