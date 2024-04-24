@@ -28,6 +28,14 @@ public class Constants {
     public static final String SUCCESS = "success";
     public static final String FAILED = "Failed";
     public static final String ERROR_MESSAGE = "errmsg";
+    public static final String DEMAND_ID = "demand_id";
+    public static final String DEMAND_ID_RQST = "demandId";
+    public static final String USER_ID = "user_id";
+    public static final String USER_ID_RQST = "userId";
+    public static final String INTEREST_FLAG = "interest_flag";
+    public static final String INTEREST_FLAG_RQST = "interestFlag";
+    public static final String CREATED_ON = "created_on";
+    public static final String UPDATED_ON = "updated_on";
     private Constants() {
     }
 }

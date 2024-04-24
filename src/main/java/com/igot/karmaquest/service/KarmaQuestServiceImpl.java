@@ -2,10 +2,13 @@ package com.igot.karmaquest.service;
 import com.igot.karmaquest.cassandrautils.CassandraConnectionManager;
 import com.igot.karmaquest.cassandrautils.CassandraOperation;
 import com.igot.karmaquest.util.Constants;
+import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,9 +46,17 @@ public class KarmaQuestServiceImpl implements KarmaQuestService {
     }
 
     @Override
-    public Object insertInterest(Map<String, Object> createInterest) {
+    public Object insertInterest(Map<String, Object> requestBodyMap) {
         logger.info("KarmaQuestServiceImpl::insertInterest");
-        return cassandraOperation.insertRecord("sunbird", "interest_capture", createInterest);
+        Map<String, Object> parameterisedMap = new HashMap<>();
+        UUID uuid = UUID.randomUUID();
+        parameterisedMap.put(Constants.INTEREST_ID, uuid.toString());
+        parameterisedMap.put(Constants.USER_ID, requestBodyMap.get(Constants.USER_ID_RQST));
+        parameterisedMap.put(Constants.INTEREST_FLAG, requestBodyMap.get(Constants.INTEREST_FLAG_RQST));
+        parameterisedMap.put(Constants.DEMAND_ID, requestBodyMap.get(Constants.DEMAND_ID_RQST));
+        parameterisedMap.put(Constants.CREATED_ON, new Timestamp(Calendar.getInstance().getTime().getTime()));
+        parameterisedMap.put(Constants.UPDATED_ON, new Timestamp(Calendar.getInstance().getTime().getTime()));
+        return cassandraOperation.insertRecord("sunbird", "interest_capture", parameterisedMap);
     }
 
 }
