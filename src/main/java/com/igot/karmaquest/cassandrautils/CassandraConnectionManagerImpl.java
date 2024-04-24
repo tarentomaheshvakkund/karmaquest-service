@@ -6,6 +6,7 @@ import com.datastax.driver.core.policies.DefaultRetryPolicy;
 import com.igot.karmaquest.exceptions.ProjectCommonException;
 import com.igot.karmaquest.util.Constants;
 import com.igot.karmaquest.util.PropertiesCache;
+import java.util.Collections;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 
@@ -14,7 +15,6 @@ import org.springframework.stereotype.Component;
 
 
 import javax.annotation.PostConstruct;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,33 +24,21 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Component
 public class CassandraConnectionManagerImpl implements CassandraConnectionManager {
-    private static Cluster cluster;
-    private static Map<String, Session> cassandraSessionMap = new ConcurrentHashMap<>(2);
-    public static Logger logger = LogManager.getLogger(CassandraConnectionManagerImpl.class);
-    List<String> keyspacesList = Arrays.asList(Constants.KEYSPACE_SUNBIRD, Constants.KEYSPACE_SUNBIRD_COURSES);
+    private final Logger logger = LogManager.getLogger(getClass());
+    private final Map<String, Session> cassandraSessionMap = new ConcurrentHashMap<>(2);
+    private Cluster cluster;
 
     @PostConstruct
-    private void addPostConstruct() {
-        logger.info("CassandraConnectionManagerImpl:: Initiating...");
-        registerShutDownHook();
+    private void initialize() {
+        logger.info("Initializing CassandraConnectionManager...");
+        registerShutdownHook();
         createCassandraConnection();
-        for (String keyspace : keyspacesList) {
-            getSession(keyspace);
-        }
-        logger.info("CassandraConnectionManagerImpl:: Initiated.");
+        initializeSessions();
+        logger.info("CassandraConnectionManager initialized.");
     }
 
-    @Override
     public Session getSession(String keyspace) {
-        Session session = cassandraSessionMap.get(keyspace);
-        if (null != session) {
-            return session;
-        } else {
-            logger.info("CassandraConnectionManagerImpl:: Creating connection for :: {}", keyspace);
-            Session session2 = cluster.connect(keyspace);
-            cassandraSessionMap.put(keyspace, session2);
-            return session2;
-        }
+        return cassandraSessionMap.computeIfAbsent(keyspace, k -> cluster.connect(keyspace));
     }
 
     private void createCassandraConnection() {
@@ -64,38 +52,24 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
             poolingOptions.setMaxRequestsPerConnection(HostDistance.LOCAL, Integer.parseInt(cache.getProperty(Constants.MAX_REQUEST_PER_CONNECTION)));
             poolingOptions.setHeartbeatIntervalSeconds(Integer.parseInt(cache.getProperty(Constants.HEARTBEAT_INTERVAL)));
             poolingOptions.setPoolTimeoutMillis(Integer.parseInt(cache.getProperty(Constants.POOL_TIMEOUT)));
-            String cassandraHost = (cache.getProperty(Constants.CASSANDRA_CONFIG_HOST));
-            String[] hosts = null;
-            if (StringUtils.isNotBlank(cassandraHost)) {
-                hosts = cassandraHost.split(",");
-            }
+            String[] hosts = StringUtils.split(cache.getProperty(Constants.CASSANDRA_CONFIG_HOST), ",");
             cluster = createCluster(hosts, poolingOptions);
-
-            final Metadata metadata = cluster.getMetadata();
-            String msg = String.format("Connected to cluster: %s", metadata.getClusterName());
-            logger.info(msg);
-
-            for (final Host host : metadata.getAllHosts()) {
-                msg = String.format("Datacenter: %s; Host: %s; Rack: %s", host.getDatacenter(), host.getAddress(), host.getRack());
-                logger.info(msg);
-            }
+            logClusterDetails(cluster);
         } catch (Exception e) {
-            logger.error(String.valueOf(e));
+            logger.error("Error creating Cassandra connection", e);
             throw new ProjectCommonException("Internal Server Error", e.getMessage(), 500);
         }
     }
 
     private static Cluster createCluster(String[] hosts, PoolingOptions poolingOptions) {
-        Cluster.Builder builder =
-                Cluster
-                        .builder()
-                        .addContactPoints(hosts)
-                        .withProtocolVersion(ProtocolVersion.V3)
-                        .withRetryPolicy(DefaultRetryPolicy.INSTANCE)
-                        .withTimestampGenerator(new AtomicMonotonicTimestampGenerator())
-                        .withPoolingOptions(poolingOptions);
+        Cluster.Builder builder = Cluster.builder()
+            .addContactPoints(hosts)
+            .withProtocolVersion(ProtocolVersion.V3)
+            .withRetryPolicy(DefaultRetryPolicy.INSTANCE)
+            .withTimestampGenerator(new AtomicMonotonicTimestampGenerator())
+            .withPoolingOptions(poolingOptions);
+
         ConsistencyLevel consistencyLevel = getConsistencyLevel();
-        logger.info("CassandraConnectionManagerImpl:createCluster: Consistency level = {}", consistencyLevel);
         if (consistencyLevel != null) {
             builder.withQueryOptions(new QueryOptions().setConsistencyLevel(consistencyLevel));
         }
@@ -105,42 +79,42 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
 
     private static ConsistencyLevel getConsistencyLevel() {
         String consistency = PropertiesCache.getInstance().readProperty(Constants.SUNBIRD_CASSANDRA_CONSISTENCY_LEVEL);
-
-        logger.info("CassandraConnectionManagerImpl:getConsistencyLevel: level = {}", consistency);
-
         if (StringUtils.isBlank(consistency)) return null;
 
         try {
             return ConsistencyLevel.valueOf(consistency.toUpperCase());
         } catch (IllegalArgumentException exception) {
-            logger.info("CassandraConnectionManagerImpl:getConsistencyLevel: Exception occurred with error message = {} "
-                    , exception.getMessage());
+            LogManager.getLogger(CassandraConnectionManagerImpl.class)
+                .info("Exception occurred with error message = {}", exception.getMessage());
         }
         return null;
     }
 
-    public static void registerShutDownHook() {
-        Runtime runtime = Runtime.getRuntime();
-        runtime.addShutdownHook(new ResourceCleanUp());
-        logger.info("Cassandra ShutDownHook registered.");
+    private void initializeSessions() {
+        List<String> keyspacesList = Collections.singletonList(Constants.KEYSPACE_SUNBIRD);
+        for (String keyspace : keyspacesList) {
+            getSession(keyspace);
+        }
     }
 
+    private void registerShutdownHook() {
+        Runtime.getRuntime().addShutdownHook(new Thread(this::cleanupResources));
+        logger.info("Cassandra shutdown hook registered.");
+    }
 
-    static class ResourceCleanUp extends Thread {
-        @Override
-        public void run() {
-            try {
-                logger.info("started resource cleanup Cassandra.");
-                for (Map.Entry<String, Session> entry : cassandraSessionMap.entrySet()) {
-                    cassandraSessionMap.get(entry.getKey()).close();
-                }
-                if (cluster != null) {
-                    cluster.close();
-                }
-                logger.info("completed resource cleanup Cassandra.");
-            } catch (Exception ex) {
-                logger.error(ex);
-            }
+    private void cleanupResources() {
+        logger.info("Starting resource cleanup for Cassandra...");
+        cassandraSessionMap.values().forEach(Session::close);
+        if (cluster != null) {
+            cluster.close();
         }
+        logger.info("Resource cleanup for Cassandra completed.");
+    }
+
+    private void logClusterDetails(Cluster cluster) {
+        final Metadata metadata = cluster.getMetadata();
+        logger.info("Connected to cluster: {}", metadata.getClusterName());
+        metadata.getAllHosts().forEach(host ->
+            logger.info("Datacenter: {}; Host: {}; Rack: {}", host.getDatacenter(), host.getAddress(), host.getRack()));
     }
 }
