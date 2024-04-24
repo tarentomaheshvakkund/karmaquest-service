@@ -9,7 +9,7 @@ import com.datastax.driver.core.querybuilder.Select;
 import com.datastax.driver.core.querybuilder.Select.Builder;
 import com.datastax.driver.core.querybuilder.Select.Where;
 import com.igot.karmaquest.util.Constants;
-import com.igot.karmaquest.util.SBApiResponse;
+import com.igot.karmaquest.util.karmaQuestApiResponse;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -84,7 +84,7 @@ public class CassandraOperationImpl implements CassandraOperation{
 
   @Override
   public Object insertRecord(String keyspaceName, String tableName, Map<String, Object> request) {
-    SBApiResponse response = new SBApiResponse();
+    karmaQuestApiResponse response = new karmaQuestApiResponse();
     String query = CassandraUtil.getPreparedStatement(keyspaceName, tableName, request);
     try {
       PreparedStatement statement = connectionManager.getSession(keyspaceName).prepare(query);

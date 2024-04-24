@@ -1,6 +1,6 @@
 package com.igot.karmaquest.util;
 
-public class SunbirdApiRespParam {
+public class KarmaQuestApiRespParam {
   private String resmsgid;
   private String msgid;
   private String err;
@@ -47,10 +47,10 @@ public class SunbirdApiRespParam {
     this.errmsg = errmsg;
   }
 
-  public SunbirdApiRespParam() {
+  public KarmaQuestApiRespParam() {
   }
 
-  public SunbirdApiRespParam(String id) {
+  public KarmaQuestApiRespParam(String id) {
     resmsgid = id;
     msgid = id;
   }

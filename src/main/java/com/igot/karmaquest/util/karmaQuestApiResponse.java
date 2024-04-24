@@ -6,22 +6,22 @@ import java.util.Map;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 
-public class SBApiResponse {
+public class karmaQuestApiResponse {
   private String id;
   private String ver;
   private String ts;
-  private SunbirdApiRespParam params;
+  private KarmaQuestApiRespParam params;
   private HttpStatus responseCode;
 
   private transient Map<String, Object> response = new HashMap<>();
 
-  public SBApiResponse() {
+  public karmaQuestApiResponse() {
     this.ver = "v1";
     this.ts = new Timestamp(System.currentTimeMillis()).toString();
-    this.params = new SunbirdApiRespParam(UUID.randomUUID().toString());
+    this.params = new KarmaQuestApiRespParam(UUID.randomUUID().toString());
   }
 
-  public SBApiResponse(String id) {
+  public karmaQuestApiResponse(String id) {
     this();
     this.id = id;
   }
@@ -50,11 +50,11 @@ public class SBApiResponse {
     this.ts = ts;
   }
 
-  public SunbirdApiRespParam getParams() {
+  public KarmaQuestApiRespParam getParams() {
     return params;
   }
 
-  public void setParams(SunbirdApiRespParam params) {
+  public void setParams(KarmaQuestApiRespParam params) {
     this.params = params;
   }
 
