@@ -1,5 +1,6 @@
 package com.igot.karmaquest.cassandrautils;
 
+import com.datastax.driver.core.ColumnDefinitions;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.igot.karmaquest.util.Constants;
@@ -8,19 +9,24 @@ import com.igot.karmaquest.util.Constants;
 import java.util.*;
 import java.util.stream.Collectors;
 
-
+/**
+ * @author Mahesh RV
+ * @author Ruksana
+ */
 public final class CassandraUtil {
 
-    private static CassandraPropertyReader propertiesCache = CassandraPropertyReader.getInstance();
+    private CassandraUtil() {
+    }
+
+    private static final CassandraPropertyReader propertiesCache = CassandraPropertyReader.getInstance();
 
 
     public static String getPreparedStatement(
             String keyspaceName, String tableName, Map<String, Object> map) {
         StringBuilder query = new StringBuilder();
-        query.append(
-                Constants.INSERT_INTO + keyspaceName + Constants.DOT + tableName + Constants.OPEN_BRACE);
+        query.append(Constants.INSERT_INTO).append(keyspaceName).append(Constants.DOT).append(tableName).append(Constants.OPEN_BRACE);
         Set<String> keySet = map.keySet();
-        query.append(String.join(",", keySet) + Constants.VALUES_WITH_BRACE);
+        query.append(String.join(",", keySet)).append(Constants.VALUES_WITH_BRACE);
         StringBuilder commaSepValueBuilder = new StringBuilder();
         for (int i = 0; i < keySet.size(); i++) {
             commaSepValueBuilder.append(Constants.QUE_MARK);
@@ -28,7 +34,7 @@ public final class CassandraUtil {
                 commaSepValueBuilder.append(Constants.COMMA);
             }
         }
-        query.append(commaSepValueBuilder + Constants.CLOSING_BRACE);
+        query.append(commaSepValueBuilder).append(Constants.CLOSING_BRACE);
         return query.toString();
     }
 
@@ -41,9 +47,7 @@ public final class CassandraUtil {
                 row -> {
                     Map<String, Object> rowMap = new HashMap<>();
                     columnsMapping
-                            .entrySet()
-                            .stream()
-                            .forEach(entry -> rowMap.put(entry.getKey(), row.getObject(entry.getValue())));
+                            .forEach((key, value) -> rowMap.put(key, row.getObject(value)));
                     responseList.add(rowMap);
                 });
         return responseList;
@@ -57,11 +61,7 @@ public final class CassandraUtil {
                 row -> {
                     Map<String, Object> rowMap = new HashMap<>();
                     columnsMapping
-                            .entrySet()
-                            .stream()
-                            .forEach(entry -> {
-                                rowMap.put(entry.getKey(), row.getObject(entry.getValue()));
-                            });
+                            .forEach((key1, value) -> rowMap.put(key1, row.getObject(value)));
 
                     responseList.put((String) rowMap.get(key), rowMap);
                 });
@@ -76,6 +76,6 @@ public final class CassandraUtil {
                 .collect(
                         Collectors.toMap(
                                 d -> propertiesCache.readProperty(d.getName()).trim(),
-                                d -> d.getName()));
+                                ColumnDefinitions.Definition::getName));
     }
 }

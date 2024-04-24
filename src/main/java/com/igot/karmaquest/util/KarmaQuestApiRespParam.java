@@ -1,58 +1,62 @@
 package com.igot.karmaquest.util;
 
+/**
+ * @author Mahesh RV
+ * @author Ruksana
+ */
 public class KarmaQuestApiRespParam {
-  private String resmsgid;
-  private String msgid;
-  private String err;
-  private String status;
-  private String errmsg;
+    private String resMsgId;
+    private String msgId;
+    private String err;
+    private String status;
+    private String errMsg;
 
-  public String getResmsgid() {
-    return resmsgid;
-  }
+    public String getResMsgId() {
+        return resMsgId;
+    }
 
-  public void setResmsgid(String resmsgid) {
-    this.resmsgid = resmsgid;
-  }
+    public void setResMsgId(String resMsgId) {
+        this.resMsgId = resMsgId;
+    }
 
-  public String getMsgid() {
-    return msgid;
-  }
+    public String getMsgId() {
+        return msgId;
+    }
 
-  public void setMsgid(String msgid) {
-    this.msgid = msgid;
-  }
+    public void setMsgId(String msgId) {
+        this.msgId = msgId;
+    }
 
-  public String getErr() {
-    return err;
-  }
+    public String getErr() {
+        return err;
+    }
 
-  public void setErr(String err) {
-    this.err = err;
-  }
+    public void setErr(String err) {
+        this.err = err;
+    }
 
-  public String getStatus() {
-    return status;
-  }
+    public String getStatus() {
+        return status;
+    }
 
-  public void setStatus(String status) {
-    this.status = status;
-  }
+    public void setStatus(String status) {
+        this.status = status;
+    }
 
-  public String getErrmsg() {
-    return errmsg;
-  }
+    public String getErrMsg() {
+        return errMsg;
+    }
 
-  public void setErrmsg(String errmsg) {
-    this.errmsg = errmsg;
-  }
+    public void setErrMsg(String errMsg) {
+        this.errMsg = errMsg;
+    }
 
-  public KarmaQuestApiRespParam() {
-  }
+    public KarmaQuestApiRespParam() {
+    }
 
-  public KarmaQuestApiRespParam(String id) {
-    resmsgid = id;
-    msgid = id;
-  }
+    public KarmaQuestApiRespParam(String id) {
+        resMsgId = id;
+        msgId = id;
+    }
 
 }

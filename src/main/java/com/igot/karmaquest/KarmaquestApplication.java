@@ -4,7 +4,6 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.Bean;
@@ -14,19 +13,23 @@ import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
+
+/**
+ * @author Mahesh RV
+ * @author Ruksana
+ */
 @EnableJpaRepositories(basePackages = {"com.igot.karmaquest"})
 @ComponentScan(basePackages = "com.igot.karmaquest")
 @EntityScan("com.igot.karmaquest")
 @SpringBootApplication
-@EnableAutoConfiguration
 public class KarmaquestApplication {
 
-    public static void main(String[] args) {
-        SpringApplication.run(KarmaquestApplication.class, args);
-    }
+	public static void main(String[] args) {
+		SpringApplication.run(KarmaquestApplication.class, args);
+	}
 
     @Bean
-    public RestTemplate restTemplate() throws Exception {
+    public RestTemplate restTemplate() {
         return new RestTemplate(getClientHttpRequestFactory());
     }
 
@@ -40,4 +43,5 @@ public class KarmaquestApplication {
         cRequestFactory.setReadTimeout(timeout);
         return cRequestFactory;
     }
+
 }

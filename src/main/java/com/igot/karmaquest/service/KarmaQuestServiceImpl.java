@@ -15,8 +15,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * @author mahesh.vakkund
+ * @author Mahesh RV
+ * @author Ruksana
  */
+
 @Component
 public class KarmaQuestServiceImpl implements KarmaQuestService {
 
@@ -26,13 +28,7 @@ public class KarmaQuestServiceImpl implements KarmaQuestService {
     @Autowired
     private CassandraOperation cassandraOperation;
 
-    public static Logger logger = LogManager.getLogger(KarmaQuestServiceImpl.class);
-
-    @Override
-    public void processInterests() {
-        logger.info("KarmaQuestServiceImpl::processInterests");
-
-    }
+    private final Logger logger = LogManager.getLogger(getClass());
 
     @Override
     public Object getInterest(String interestId) {

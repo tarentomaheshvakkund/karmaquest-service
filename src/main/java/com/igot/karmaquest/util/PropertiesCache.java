@@ -1,6 +1,8 @@
 package com.igot.karmaquest.util;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,22 +11,32 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- *  @author Mahesh RV
+ * @author Mahesh RV
+ * @author Ruksana
+ * <p>
+ * A utility class to cache and retrieve properties.
+ * It loads properties from specified files and provides methods to access them.
+ * Also handles environment variable overrides for properties.
  */
 public class PropertiesCache {
+    // Logger for logging messages
+    private final Logger logger = LogManager.getLogger(getClass());
 
-    private static PropertiesCache propertiesCache = null;
-    public final Map<String, Float> attributePercentageMap = new ConcurrentHashMap<>();
+    // Array of file names from which properties are loaded
     private final String[] fileName = {
             "cassandra.config.properties",
             "cassandratablecolumn.properties",
             "application.properties",
             "customerror.properties"
     };
+    // Properties object to store loaded properties
     private final Properties configProp = new Properties();
 
-
+    /**
+     * Private constructor to prevent instantiation from outside
+     */
     private PropertiesCache() {
+        // Load properties from each file
         for (String file : fileName) {
             InputStream in = this.getClass().getClassLoader().getResourceAsStream(file);
             try {
@@ -34,40 +46,42 @@ public class PropertiesCache {
         }
     }
 
+    /**
+     * Method to get singleton instance of PropertiesCache
+     *
+     * @return - returns the instance of PropertiesCache
+     */
     public static PropertiesCache getInstance() {
 
         // change the lazy holder implementation to simple singleton implementation ...
-        if (null == propertiesCache) {
-            synchronized (PropertiesCache.class) {
-                if (null == propertiesCache) {
-                    propertiesCache = new PropertiesCache();
-                }
-            }
-        }
-
-        return propertiesCache;
+        return PropertiesCacheHolder.propertiesCache;
     }
 
-    public void saveConfigProperty(String key, String value) {
-        configProp.setProperty(key, value);
+    private static final class PropertiesCacheHolder {
+        static final PropertiesCache propertiesCache = new PropertiesCache();
     }
 
+    /**
+     * Method to get a property value
+     *
+     * @param key -key to be fetched.
+     * @return - returns the values.
+     */
     public String getProperty(String key) {
         String value = System.getenv(key);
         if (StringUtils.isNotBlank(value)) return value;
         return configProp.getProperty(key) != null ? configProp.getProperty(key) : key;
     }
 
+    /**
+     * Method to read a property value
+     *
+     * @param key - key to be read
+     * @return - returns the value.
+     */
     public String readProperty(String key) {
         String value = System.getenv(key);
         if (StringUtils.isNotBlank(value)) return value;
         return configProp.getProperty(key);
     }
-    
-	public String readCustomError(String key) {
-		if (StringUtils.isNoneBlank(key)) {
-			key = key.replace(" ", "_");
-		}
-		return readProperty(key);
-	}
 }

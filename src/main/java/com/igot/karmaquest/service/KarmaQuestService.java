@@ -3,10 +3,10 @@ package com.igot.karmaquest.service;
 import java.util.Map;
 
 /**
- * @author mahesh.vakkund
+ * @author Mahesh RV
+ * @author Ruksana
  */
 public interface KarmaQuestService {
-    void processInterests();
 
     Object getInterest(String interestId);
 

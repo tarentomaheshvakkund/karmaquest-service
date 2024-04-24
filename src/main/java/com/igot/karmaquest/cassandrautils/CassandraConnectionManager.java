@@ -4,6 +4,7 @@ import com.datastax.driver.core.Session;
 
 /**
  * @author Mahesh RV
+ * @author Ruksana
  */
 public interface CassandraConnectionManager {
 
