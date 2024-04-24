@@ -10,6 +10,6 @@ public interface KarmaQuestService {
 
     Object getInterest(String interestId);
 
-    Object insertInterest(Map<String, Object> createInterest);
+    Object insertInterest(Map<String, Object> requestBodyMap);
 
 }

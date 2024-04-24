@@ -25,8 +25,8 @@ public class KarmaQuestController {
     }
 
     @PostMapping("/create")
-    public Object createInterest(@RequestBody Map<String, Object> requestBody) {
-        return serviceClass.insertInterest(requestBody);
+    public Object createInterest(@RequestBody Map<String, Object> requestBodyMap) {
+        return serviceClass.insertInterest(requestBodyMap);
     }
 
 }
