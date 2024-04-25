@@ -36,6 +36,7 @@ public class Constants {
     public static final String INTEREST_FLAG_RQST = "interestFlag";
     public static final String CREATED_ON = "created_on";
     public static final String UPDATED_ON = "updated_on";
+    public static final String DATA = "data";
     private Constants() {
     }
 }
