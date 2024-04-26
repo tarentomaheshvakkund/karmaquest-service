@@ -1,6 +1,6 @@
 package com.igot.karmaquest.service;
 
-import java.util.Map;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * @author Mahesh RV
@@ -10,6 +10,6 @@ public interface KarmaQuestService {
 
     Object getInterest(String interestId);
 
-    Object insertInterest(Map<String, Object> requestBodyMap);
+    Object insertInterest(JsonNode requestBodyMap);
 
 }

@@ -1,8 +1,7 @@
 package com.igot.karmaquest.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.igot.karmaquest.service.KarmaQuestServiceImpl;
-
-import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,18 +16,18 @@ import org.springframework.web.bind.annotation.RestController;
  * @author Ruksana
  */
 @RestController
-@RequestMapping("/karma/quests")
+@RequestMapping("/karmaquests/interest")
 public class KarmaQuestController {
     @Autowired
     KarmaQuestServiceImpl serviceClass;
 
-    @GetMapping("/getInterest/{interestId}")
+    @GetMapping("/get/{interestId}")
     public Object processInterests(@PathVariable String interestId) {
         return serviceClass.getInterest(interestId);
     }
 
     @PostMapping("/create")
-    public Object createInterest(@RequestBody Map<String, Object> requestBodyMap) {
+    public Object createInterest(@RequestBody JsonNode requestBodyMap) {
         return serviceClass.insertInterest(requestBodyMap);
     }
 
