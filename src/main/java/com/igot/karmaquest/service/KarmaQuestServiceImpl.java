@@ -85,7 +85,7 @@ public class KarmaQuestServiceImpl implements KarmaQuestService {
         if (record.containsKey(fieldName)) {
             String fieldValue = (String) record.get(fieldName);
             try {
-                if (fieldName.equals("data")) {
+                if (fieldName.equals(Constants.DATA)) {
                     Map<String, Object> dataMap = objectMapper.readValue(fieldValue, new TypeReference<Map<String,Object>>(){});
                     record.put(fieldName, dataMap);
                 } else {
