@@ -37,6 +37,9 @@ public class Constants {
     public static final String CREATED_ON = "created_on";
     public static final String UPDATED_ON = "updated_on";
     public static final String DATA = "data";
+    public static final String DATABASE = "sunbird";
+    public static final String TABLE = "interest_capture";
+    public static final String REGEX = "^\"|\"$";
     private Constants() {
     }
 }

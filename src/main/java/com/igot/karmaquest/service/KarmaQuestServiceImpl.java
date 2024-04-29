@@ -44,12 +44,12 @@ public class KarmaQuestServiceImpl implements KarmaQuestService {
         Map<String, Object> propertyMap = new HashMap<>();
         propertyMap.put(Constants.INTEREST_ID, interestId);
         List<String> fields = new ArrayList<>();
-        List<Map<String, Object>> response = cassandraOperation.getRecordsByPropertiesByKey("sunbird", "interest_capture", propertyMap, fields, interestId);
+        List<Map<String, Object>> response = cassandraOperation.getRecordsByPropertiesByKey(Constants.DATABASE, Constants.TABLE, propertyMap, fields, interestId);
         // Parse the "data" field from its string representation into a JSON object
         for (Map<String, Object> record : response) {
-            parseStringifiedField(record, "data");
-            parseStringifiedField(record, "demand_id");
-            parseStringifiedField(record, "user_id");
+            parseStringifiedField(record, Constants.DATA);
+            parseStringifiedField(record, Constants.DEMAND_ID);
+            parseStringifiedField(record, Constants.USER_ID);
         }
         return response;
     }
@@ -78,7 +78,7 @@ public class KarmaQuestServiceImpl implements KarmaQuestService {
             throw new ProjectCommonException("ERROR01", "Exception while mapping JsonNode",
                 500);
         }
-        return cassandraOperation.insertRecord("sunbird", "interest_capture", parameterisedMap);
+        return cassandraOperation.insertRecord(Constants.DATABASE, Constants.TABLE, parameterisedMap);
     }
 
     private void parseStringifiedField(Map<String, Object> record, String fieldName) {
@@ -90,7 +90,7 @@ public class KarmaQuestServiceImpl implements KarmaQuestService {
                     record.put(fieldName, dataMap);
                 } else {
                     // For user_id and other stringified fields, simply remove leading and trailing quotation marks
-                    fieldValue = fieldValue.replaceAll("^\"|\"$", "");
+                    fieldValue = fieldValue.replaceAll(Constants.REGEX, "");
                     record.put(fieldName, fieldValue);
                 }
             } catch (Exception e) {
