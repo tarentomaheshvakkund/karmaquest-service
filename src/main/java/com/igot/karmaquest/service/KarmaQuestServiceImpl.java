@@ -1,5 +1,6 @@
 package com.igot.karmaquest.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.igot.karmaquest.cassandrautils.CassandraConnectionManager;
@@ -43,9 +44,14 @@ public class KarmaQuestServiceImpl implements KarmaQuestService {
         Map<String, Object> propertyMap = new HashMap<>();
         propertyMap.put(Constants.INTEREST_ID, interestId);
         List<String> fields = new ArrayList<>();
-        return cassandraOperation.getRecordsByPropertiesByKey("sunbird", "interest_capture", propertyMap, fields,
-            interestId);
-
+        List<Map<String, Object>> response = cassandraOperation.getRecordsByPropertiesByKey(Constants.DATABASE, Constants.TABLE, propertyMap, fields, interestId);
+        // Parse the "data" field from its string representation into a JSON object
+        for (Map<String, Object> record : response) {
+            parseStringifiedField(record, Constants.DATA);
+            parseStringifiedField(record, Constants.DEMAND_ID);
+            parseStringifiedField(record, Constants.USER_ID);
+        }
+        return response;
     }
 
     @Override
@@ -72,7 +78,26 @@ public class KarmaQuestServiceImpl implements KarmaQuestService {
             throw new ProjectCommonException("ERROR01", "Exception while mapping JsonNode",
                 500);
         }
-        return cassandraOperation.insertRecord("sunbird", "interest_capture", parameterisedMap);
+        return cassandraOperation.insertRecord(Constants.DATABASE, Constants.TABLE, parameterisedMap);
+    }
+
+    private void parseStringifiedField(Map<String, Object> record, String fieldName) {
+        if (record.containsKey(fieldName)) {
+            String fieldValue = (String) record.get(fieldName);
+            try {
+                if (fieldName.equals(Constants.DATA)) {
+                    Map<String, Object> dataMap = objectMapper.readValue(fieldValue, new TypeReference<Map<String,Object>>(){});
+                    record.put(fieldName, dataMap);
+                } else {
+                    // For user_id and other stringified fields, simply remove leading and trailing quotation marks
+                    fieldValue = fieldValue.replaceAll(Constants.REGEX, "");
+                    record.put(fieldName, fieldValue);
+                }
+            } catch (Exception e) {
+                logger.error("Error parsing JSON field {}: {}", fieldName, e.getMessage());
+                // Handle parsing error
+            }
+        }
     }
 
 }
